@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { db } from './firebase';
 import type { Student } from './types';
 import { INITIAL_STUDENTS } from './mockData';
 import { DashboardStats } from './components/DashboardStats';
@@ -20,31 +22,67 @@ interface ActiveReceiptConfig {
   amount: number;
 }
 
+const CLOUD_DOC = 'academia/students';
+
 function App() {
-  // 1. Core state with LocalStorage persistence
   const [students, setStudents] = useState<Student[]>(() => {
     try {
       const saved = localStorage.getItem('peruinka_students');
-      if (saved) {
-        return JSON.parse(saved);
-      }
+      if (saved) return JSON.parse(saved);
     } catch (e) {
-      console.error('Error loading students from localStorage:', e);
+      console.error('Error loading from localStorage:', e);
     }
     return INITIAL_STUDENTS;
   });
 
-  // Save to LocalStorage whenever state changes
-  useEffect(() => {
-    localStorage.setItem('peruinka_students', JSON.stringify(students));
-  }, [students]);
+  const [cloudStatus, setCloudStatus] = useState<'synced' | 'syncing' | 'offline'>('syncing');
+  const initialStudentsRef = useRef(students);
 
-  // 2. Modals state
+  // Firestore real-time listener — syncs across all devices
+  useEffect(() => {
+    const docRef = doc(db, CLOUD_DOC);
+
+    const unsubscribe = onSnapshot(
+      docRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (Array.isArray(data.list)) {
+            setStudents(data.list);
+            localStorage.setItem('peruinka_students', JSON.stringify(data.list));
+          }
+        } else {
+          // Primera vez: sube los datos locales a la nube
+          setDoc(docRef, { list: initialStudentsRef.current });
+        }
+        setCloudStatus('synced');
+      },
+      () => {
+        setCloudStatus('offline');
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  const saveToCloud = async (updatedStudents: Student[]) => {
+    localStorage.setItem('peruinka_students', JSON.stringify(updatedStudents));
+    setCloudStatus('syncing');
+    try {
+      await setDoc(doc(db, CLOUD_DOC), { list: updatedStudents });
+      setCloudStatus('synced');
+    } catch (error) {
+      console.error('Cloud sync error:', error);
+      setCloudStatus('offline');
+    }
+  };
+
+  // Modals state
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [activeReceipt, setActiveReceipt] = useState<ActiveReceiptConfig | null>(null);
   const [showReport, setShowReport] = useState(false);
 
-  // 3. Toast alerts state
+  // Toast alerts state
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [toastCounter, setToastCounter] = useState(0);
 
@@ -52,29 +90,23 @@ function App() {
     const id = toastCounter;
     setToastCounter(prev => prev + 1);
     setToasts(prev => [...prev, { id, message }]);
-    
-    // Auto remove after 3.5 seconds
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 3500);
   };
 
-  // 4. Student operations
   const handleSaveStudent = (updatedStudent: Student) => {
-    setStudents(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
-    
-    // If the student currently open in detail modal was saved, update it in local state too
-    if (selectedStudent && selectedStudent.id === updatedStudent.id) {
+    const updated = students.map(s => s.id === updatedStudent.id ? updatedStudent : s);
+    setStudents(updated);
+    if (selectedStudent?.id === updatedStudent.id) {
       setSelectedStudent(updatedStudent);
     }
-    
+    saveToCloud(updated);
     showToast(`¡Se guardaron los cambios de ${updatedStudent.integrante}!`);
   };
 
   const handleAddStudent = () => {
-    // Determine next unique ID
     const nextId = students.length > 0 ? Math.max(...students.map(s => s.id)) + 1 : 1;
-    
     const newStudent: Student = {
       id: nextId,
       integrante: '',
@@ -89,38 +121,45 @@ function App() {
       premio_polo: 'NO GANÓ',
       polo_entregado: false
     };
-
-    setStudents(prev => [...prev, newStudent]);
+    const updated = [...students, newStudent];
+    setStudents(updated);
     setSelectedStudent(newStudent);
+    saveToCloud(updated);
     showToast('Nuevo estudiante creado. Complete sus datos.');
   };
 
   const handleDeleteStudent = (studentId: number) => {
-    setStudents(prev => prev.filter(s => s.id !== studentId));
+    const updated = students.filter(s => s.id !== studentId);
+    setStudents(updated);
     setSelectedStudent(null);
+    saveToCloud(updated);
     showToast('Alumno dado de baja correctamente.');
   };
 
-  // Import list from backup
   const handleImportStudents = (imported: Student[]) => {
     setStudents(imported);
+    saveToCloud(imported);
     showToast('Base de datos restaurada correctamente.');
   };
 
-  // Trigger individual abono receipt
   const handleEmitReceipt = (
     student: Student,
     quotaType: 'Cuota 1' | 'Cuota 2',
     paymentNumber: 1 | 2,
     amount: number
   ) => {
-    setActiveReceipt({
-      student,
-      quotaType,
-      paymentNumber,
-      amount
-    });
+    setActiveReceipt({ student, quotaType, paymentNumber, amount });
   };
+
+  const cloudLabel =
+    cloudStatus === 'synced' ? '☁️ Sincronizado' :
+    cloudStatus === 'syncing' ? '⏳ Guardando...' :
+    '⚠️ Sin conexión';
+
+  const cloudColor =
+    cloudStatus === 'synced' ? '#10b981' :
+    cloudStatus === 'syncing' ? '#f59e0b' :
+    '#ef4444';
 
   return (
     <div className="app-container">
@@ -134,7 +173,11 @@ function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.8rem', color: cloudColor, fontWeight: 600 }}>
+            {cloudLabel}
+          </span>
+          <span style={{ color: 'var(--border-light)' }}>|</span>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
             Moneda: <strong>Soles (S/.)</strong>
           </span>
@@ -153,36 +196,30 @@ function App() {
         </div>
       </header>
 
-      {/* Cloud & Backup Synchronization Panel */}
       <div className="no-print">
-        <BackupPanel 
-          students={students} 
-          onImport={handleImportStudents} 
-          onShowToast={showToast} 
+        <BackupPanel
+          students={students}
+          onImport={handleImportStudents}
+          onShowToast={showToast}
         />
       </div>
 
-      {/* KPI Cards & Polometro Dashboard */}
       <div className="no-print">
         <DashboardStats students={students} />
       </div>
 
-      {/* Main Student Directory Table */}
       <div className="no-print">
-        <StudentList 
-          students={students} 
-          onSelectStudent={setSelectedStudent} 
-          onAddStudent={handleAddStudent} 
+        <StudentList
+          students={students}
+          onSelectStudent={setSelectedStudent}
+          onAddStudent={handleAddStudent}
         />
       </div>
 
-      {/* FOOTER */}
       <footer className="no-print" style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
         <p>© 2026 PERU INKA. Desarrollado con 💜 para Academias de Baile.</p>
       </footer>
 
-      {/* ============================================================== */}
-      {/* MODAL: STUDENT DETAILS & PAYMENT FORM */}
       {selectedStudent && (
         <div className="no-print">
           <StudentDetail
@@ -195,14 +232,12 @@ function App() {
         </div>
       )}
 
-      {/* MODAL: REPORTE POR SEDES */}
       {showReport && (
         <ReportModal students={students} onClose={() => setShowReport(false)} />
       )}
 
-      {/* MODAL: DIGITAL RECEIPT TICKET (PRINTABLE & SHAREABLE) */}
       {activeReceipt && (
-        <ReceiptModal 
+        <ReceiptModal
           student={activeReceipt.student}
           quotaType={activeReceipt.quotaType}
           paymentNumber={activeReceipt.paymentNumber}
@@ -211,7 +246,6 @@ function App() {
         />
       )}
 
-      {/* TOAST SYSTEM ALERTS */}
       <div className="toast-container no-print">
         {toasts.map(toast => (
           <div key={toast.id} className="toast">

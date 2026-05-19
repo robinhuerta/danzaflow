@@ -432,6 +432,7 @@ body {
   max-width: 920px;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -517,7 +518,13 @@ body {
   gap: 1rem;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
+  .demographics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
   .demographics-grid {
     grid-template-columns: 1fr;
   }
@@ -530,7 +537,7 @@ body {
   gap: 1.5rem;
 }
 
-@media (max-width: 680px) {
+@media (max-width: 820px) {
   .payments-grid {
     grid-template-columns: 1fr;
   }
@@ -581,6 +588,7 @@ body {
 }
 
 .input-control {
+  width: 100%;
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-light);
