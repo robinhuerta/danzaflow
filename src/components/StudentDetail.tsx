@@ -208,7 +208,7 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({
         </div>
 
         {/* Edit Demographics */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+        <div className="demographics-grid">
           <div className="form-group">
             <label>Nombre del Integrante</label>
             <input 
