@@ -95,6 +95,12 @@ function App() {
     showToast('Nuevo estudiante creado. Complete sus datos.');
   };
 
+  const handleDeleteStudent = (studentId: number) => {
+    setStudents(prev => prev.filter(s => s.id !== studentId));
+    setSelectedStudent(null);
+    showToast('Alumno dado de baja correctamente.');
+  };
+
   // Import list from backup
   const handleImportStudents = (imported: Student[]) => {
     setStudents(imported);
@@ -179,10 +185,11 @@ function App() {
       {/* MODAL: STUDENT DETAILS & PAYMENT FORM */}
       {selectedStudent && (
         <div className="no-print">
-          <StudentDetail 
+          <StudentDetail
             student={selectedStudent}
             onSave={handleSaveStudent}
             onClose={() => setSelectedStudent(null)}
+            onDelete={handleDeleteStudent}
             onEmitReceipt={handleEmitReceipt}
           />
         </div>

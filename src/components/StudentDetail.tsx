@@ -5,6 +5,7 @@ interface StudentDetailProps {
   student: Student;
   onSave: (updatedStudent: Student) => void;
   onClose: () => void;
+  onDelete: (studentId: number) => void;
   onEmitReceipt: (student: Student, quotaType: 'Cuota 1' | 'Cuota 2', paymentNumber: 1 | 2, amount: number) => void;
 }
 
@@ -12,6 +13,7 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({
   student,
   onSave,
   onClose,
+  onDelete,
   onEmitReceipt
 }) => {
   // Local state for forms
@@ -479,13 +481,26 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border-light)', paddingTop: '1.25rem' }}>
-          <button onClick={onClose} className="btn btn-secondary">
-            Cancelar
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', borderTop: '1px solid var(--border-light)', paddingTop: '1.25rem', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => {
+              if (confirm(`¿Dar de baja a "${integrante || 'este alumno'}"? Esta acción no se puede deshacer.`)) {
+                onDelete(student.id);
+              }
+            }}
+            className="btn"
+            style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontSize: '0.85rem' }}
+          >
+            🗑️ Dar de Baja
           </button>
-          <button onClick={handleSave} className="btn btn-primary" style={{ minWidth: '120px' }}>
-            Guardar Cambios
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button onClick={onClose} className="btn btn-secondary">
+              Cancelar
+            </button>
+            <button onClick={handleSave} className="btn btn-primary" style={{ minWidth: '120px' }}>
+              Guardar Cambios
+            </button>
+          </div>
         </div>
       </div>
     </div>
