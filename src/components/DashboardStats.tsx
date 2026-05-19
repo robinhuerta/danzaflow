@@ -120,7 +120,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ students }) => {
           <span className="polometro-text">{polometroPercentage}%</span>
         </div>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Muestra el avance de la entrega física del polo de la institución a los estudiantes que ya abonaron su cuota mínima (S/. 150.00).
+          Muestra el avance de la entrega física del polo de la institución a los estudiantes que ya abonaron su cuota mínima (S/. 75.00).
         </p>
       </div>
     </div>

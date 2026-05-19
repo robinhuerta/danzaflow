@@ -6,6 +6,7 @@ import { StudentList } from './components/StudentList';
 import { StudentDetail } from './components/StudentDetail';
 import { ReceiptModal } from './components/ReceiptModal';
 import { BackupPanel } from './components/BackupPanel';
+import { ReportModal } from './components/ReportModal';
 
 interface Toast {
   id: number;
@@ -23,7 +24,7 @@ function App() {
   // 1. Core state with LocalStorage persistence
   const [students, setStudents] = useState<Student[]>(() => {
     try {
-      const saved = localStorage.getItem('danzaflow_students');
+      const saved = localStorage.getItem('peruinka_students');
       if (saved) {
         return JSON.parse(saved);
       }
@@ -35,12 +36,13 @@ function App() {
 
   // Save to LocalStorage whenever state changes
   useEffect(() => {
-    localStorage.setItem('danzaflow_students', JSON.stringify(students));
+    localStorage.setItem('peruinka_students', JSON.stringify(students));
   }, [students]);
 
   // 2. Modals state
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [activeReceipt, setActiveReceipt] = useState<ActiveReceiptConfig | null>(null);
+  const [showReport, setShowReport] = useState(false);
 
   // 3. Toast alerts state
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -77,12 +79,12 @@ function App() {
       id: nextId,
       integrante: '',
       telefono: '',
-      sede: 'Santa Anita - Varones',
+      sede: 'Santa Anita',
       talla_polo: '',
       c1: { abono_1: 0, abono_2: 0, fecha: '', estado: 'Pendiente' },
       c2: { abono_1: 0, abono_2: 0, fecha: '', estado: 'Pendiente' },
       total_pagado: 0,
-      deuda_actual: 300,
+      deuda_actual: 150,
       estado_financiero: 'DEUDA TOTAL',
       premio_polo: 'NO GANÓ',
       polo_entregado: false
@@ -119,9 +121,9 @@ function App() {
       {/* Brand Header */}
       <header className="glass-panel app-header no-print">
         <div className="app-brand">
-          <div className="brand-icon">D</div>
+          <div className="brand-icon">P</div>
           <div className="brand-info">
-            <h1>DanzaFlow</h1>
+            <h1>PERU INKA</h1>
             <p>Control de Cuotas, Recibos y Polos • Academia de Danza</p>
           </div>
         </div>
@@ -134,6 +136,14 @@ function App() {
           <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
             Pagos rápidos: <strong>⚡ YAPE</strong>
           </span>
+          <span style={{ color: 'var(--border-light)' }}>|</span>
+          <button
+            onClick={() => setShowReport(true)}
+            className="btn btn-secondary"
+            style={{ padding: '0.35rem 0.9rem', fontSize: '0.8rem' }}
+          >
+            📋 Reporte
+          </button>
         </div>
       </header>
 
@@ -162,7 +172,7 @@ function App() {
 
       {/* FOOTER */}
       <footer className="no-print" style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-        <p>© 2026 DanzaFlow. Desarrollado con 💜 para Academias de Baile.</p>
+        <p>© 2026 PERU INKA. Desarrollado con 💜 para Academias de Baile.</p>
       </footer>
 
       {/* ============================================================== */}
@@ -176,6 +186,11 @@ function App() {
             onEmitReceipt={handleEmitReceipt}
           />
         </div>
+      )}
+
+      {/* MODAL: REPORTE POR SEDES */}
+      {showReport && (
+        <ReportModal students={students} onClose={() => setShowReport(false)} />
       )}
 
       {/* MODAL: DIGITAL RECEIPT TICKET (PRINTABLE & SHAREABLE) */}

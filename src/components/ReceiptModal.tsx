@@ -43,7 +43,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
       poloMessage = `\n\n👕 *¡Felicidades! Has ganado tu Polo Institucional Oficial* 🎉\nTalla registrada: *${student.talla_polo || 'Pendiente por definir'}*.\n${student.polo_entregado ? 'Estado: *Entregado*' : 'Puedes reclamarlo en recepción en tu próxima clase. 🎁'}`;
     }
 
-    const message = `*RECIBO DIGITAL - ACADEMIA DANZA & ESTILO* 💃✨
+    const message = `*RECIBO DIGITAL - PERU INKA* 💃✨
 
 Estimado(a) *${student.integrante}*, te enviamos la confirmación de tu pago:
 
@@ -109,8 +109,8 @@ Sede: ${student.sede}
         {/* The Printable Ticket */}
         <div className="receipt-ticket-wrapper">
           <div className="receipt-header">
-            <div className="receipt-logo">D</div>
-            <h3>ACADEMIA DANZA & ESTILO</h3>
+            <div className="receipt-logo">P</div>
+            <h3>PERU INKA</h3>
             <p>RUC: 10452395821<br />Calle Las Danzas 450, Lima<br />Telf: 987 654 321</p>
           </div>
 

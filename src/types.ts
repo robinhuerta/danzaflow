@@ -2,6 +2,7 @@ export interface Payment {
   abono_1: number;
   abono_2: number;
   fecha: string; // Formato YYYY-MM-DD
+  fecha_vencimiento?: string; // Fecha límite de pago YYYY-MM-DD
   estado: 'Liquidado' | 'En Acuentas' | 'Pendiente';
 }
 
