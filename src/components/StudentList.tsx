@@ -31,8 +31,8 @@ export const StudentList: React.FC<StudentListProps> = ({
 
     // 3. Finances
     const matchesFinances = selectedFinances === '' || 
-      (selectedFinances === 'LIQUIDADO' && student.total_pagado >= 300) ||
-      (selectedFinances === 'EN ACUENTAS' && student.total_pagado > 0 && student.total_pagado < 300) ||
+      (selectedFinances === 'LIQUIDADO' && student.total_pagado >= 150) ||
+      (selectedFinances === 'EN ACUENTAS' && student.total_pagado > 0 && student.total_pagado < 150) ||
       (selectedFinances === 'DEUDA TOTAL' && student.total_pagado === 0);
 
     // 4. Polo
@@ -100,9 +100,9 @@ export const StudentList: React.FC<StudentListProps> = ({
           onChange={(e) => setSelectedFinances(e.target.value)}
         >
           <option value="">Todos los Estados Financieros</option>
-          <option value="LIQUIDADO">Liquidado (S/. 300)</option>
+          <option value="LIQUIDADO">Liquidado (S/. 150)</option>
           <option value="EN ACUENTAS">En Cuentas (Abonado)</option>
-          <option value="DEUDA TOTAL">Deuda Total (S/. 0)</option>
+          <option value="DEUDA TOTAL">Deuda Total (S/. 150)</option>
         </select>
 
         {/* Filter by Polo */}

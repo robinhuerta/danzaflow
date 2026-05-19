@@ -3,6 +3,7 @@ import type { Student } from '../types';
 
 interface StudentDetailProps {
   student: Student;
+  isNew?: boolean;
   onSave: (updatedStudent: Student) => void;
   onClose: () => void;
   onDelete: (studentId: number) => void;
@@ -11,6 +12,7 @@ interface StudentDetailProps {
 
 export const StudentDetail: React.FC<StudentDetailProps> = ({
   student,
+  isNew = false,
   onSave,
   onClose,
   onDelete,
@@ -121,6 +123,19 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({
     };
 
     onSave(updatedStudent);
+
+    // Auto-emit receipt for the first abono that changed
+    if (!isNew) {
+      if (c1Abono1 > 0 && c1Abono1 !== student.c1.abono_1) {
+        onEmitReceipt(updatedStudent, 'Cuota 1', 1, c1Abono1);
+      } else if (c1Abono2 > 0 && c1Abono2 !== student.c1.abono_2) {
+        onEmitReceipt(updatedStudent, 'Cuota 1', 2, c1Abono2);
+      } else if (c2Abono1 > 0 && c2Abono1 !== student.c2.abono_1) {
+        onEmitReceipt(updatedStudent, 'Cuota 2', 1, c2Abono1);
+      } else if (c2Abono2 > 0 && c2Abono2 !== student.c2.abono_2) {
+        onEmitReceipt(updatedStudent, 'Cuota 2', 2, c2Abono2);
+      }
+    }
   };
 
   // Perform a quick delivery of the polo
@@ -482,23 +497,25 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({
 
         {/* Footer Actions */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', borderTop: '1px solid var(--border-light)', paddingTop: '1.25rem', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => {
-              if (confirm(`¿Dar de baja a "${integrante || 'este alumno'}"? Esta acción no se puede deshacer.`)) {
-                onDelete(student.id);
-              }
-            }}
-            className="btn"
-            style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontSize: '0.85rem' }}
-          >
-            🗑️ Dar de Baja
-          </button>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          {!isNew && (
+            <button
+              onClick={() => {
+                if (confirm(`¿Dar de baja a "${integrante || 'este alumno'}"? Esta acción no se puede deshacer.`)) {
+                  onDelete(student.id);
+                }
+              }}
+              className="btn"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontSize: '0.85rem' }}
+            >
+              🗑️ Dar de Baja
+            </button>
+          )}
+          <div style={{ display: 'flex', gap: '0.75rem', marginLeft: isNew ? 'auto' : undefined }}>
             <button onClick={onClose} className="btn btn-secondary">
               Cancelar
             </button>
             <button onClick={handleSave} className="btn btn-primary" style={{ minWidth: '120px' }}>
-              Guardar Cambios
+              {isNew ? '✅ Agregar Alumno' : 'Guardar Cambios'}
             </button>
           </div>
         </div>

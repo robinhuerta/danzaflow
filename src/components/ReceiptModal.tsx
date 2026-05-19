@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import type { Student } from '../types';
 
 interface ReceiptModalProps {
@@ -183,7 +184,13 @@ Sede: ${student.sede}
           </div>
 
           <div className="receipt-footer">
-            <div className="receipt-qr-sim">QR</div>
+            <QRCodeSVG
+            value={`PERU INKA\nRecibo: ${receiptNumber}\nAlumno: ${student.integrante}\nConcepto: ${conceptName}\nMonto: S/. ${amount.toFixed(2)}\nFecha: ${new Date().toLocaleDateString('es-PE')}\nSede: ${student.sede}`}
+            size={90}
+            bgColor="#ffffff"
+            fgColor="#1e1b4b"
+            level="M"
+          />
             <p>¡Gracias por tu pago y confianza!<br />Baila, sueña y disfruta cada paso.</p>
           </div>
         </div>

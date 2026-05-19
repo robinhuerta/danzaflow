@@ -51,13 +51,14 @@ function App() {
             setStudents(data.list);
             localStorage.setItem('peruinka_students', JSON.stringify(data.list));
           }
-        } else {
-          // Primera vez: sube los datos locales a la nube
+        } else if (initialStudentsRef.current.length > 0) {
+          // Primera vez: sube los datos locales solo si hay datos reales
           setDoc(docRef, { list: initialStudentsRef.current });
         }
         setCloudStatus('synced');
       },
-      () => {
+      (error) => {
+        console.error('Firestore listener error:', error.code, error.message);
         setCloudStatus('offline');
       }
     );
@@ -65,20 +66,36 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  // Firestore no acepta undefined — limpia recursivamente antes de guardar
+  const cleanUndefined = (obj: unknown): unknown => {
+    if (Array.isArray(obj)) return obj.map(cleanUndefined);
+    if (obj !== null && typeof obj === 'object') {
+      return Object.fromEntries(
+        Object.entries(obj as Record<string, unknown>)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => [k, cleanUndefined(v)])
+      );
+    }
+    return obj;
+  };
+
   const saveToCloud = async (updatedStudents: Student[]) => {
     localStorage.setItem('peruinka_students', JSON.stringify(updatedStudents));
     setCloudStatus('syncing');
     try {
-      await setDoc(doc(db, CLOUD_DOC), { list: updatedStudents });
+      const clean = cleanUndefined(updatedStudents);
+      await setDoc(doc(db, CLOUD_DOC), { list: clean });
       setCloudStatus('synced');
     } catch (error) {
       console.error('Cloud sync error:', error);
       setCloudStatus('offline');
+      showToast('⚠️ Sin conexión — datos guardados localmente, se sincronizarán al reconectar.');
     }
   };
 
   // Modals state
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [pendingNew, setPendingNew] = useState<Student | null>(null);
   const [activeReceipt, setActiveReceipt] = useState<ActiveReceiptConfig | null>(null);
   const [showReport, setShowReport] = useState(false);
 
@@ -107,7 +124,7 @@ function App() {
 
   const handleAddStudent = () => {
     const nextId = students.length > 0 ? Math.max(...students.map(s => s.id)) + 1 : 1;
-    const newStudent: Student = {
+    setPendingNew({
       id: nextId,
       integrante: '',
       telefono: '',
@@ -120,12 +137,15 @@ function App() {
       estado_financiero: 'DEUDA TOTAL',
       premio_polo: 'NO GANÓ',
       polo_entregado: false
-    };
+    });
+  };
+
+  const handleConfirmNewStudent = (newStudent: Student) => {
     const updated = [...students, newStudent];
     setStudents(updated);
-    setSelectedStudent(newStudent);
     saveToCloud(updated);
-    showToast('Nuevo estudiante creado. Complete sus datos.');
+    setPendingNew(null);
+    showToast(`¡${newStudent.integrante || 'Alumno'} agregado correctamente!`);
   };
 
   const handleDeleteStudent = (studentId: number) => {
@@ -227,6 +247,19 @@ function App() {
             onSave={handleSaveStudent}
             onClose={() => setSelectedStudent(null)}
             onDelete={handleDeleteStudent}
+            onEmitReceipt={handleEmitReceipt}
+          />
+        </div>
+      )}
+
+      {pendingNew && (
+        <div className="no-print">
+          <StudentDetail
+            student={pendingNew}
+            isNew
+            onSave={handleConfirmNewStudent}
+            onClose={() => setPendingNew(null)}
+            onDelete={() => setPendingNew(null)}
             onEmitReceipt={handleEmitReceipt}
           />
         </div>

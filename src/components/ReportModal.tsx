@@ -32,6 +32,32 @@ const td: React.CSSProperties = { padding: '0.4rem 0.6rem', verticalAlign: 'midd
 export const ReportModal: React.FC<ReportModalProps> = ({ students, onClose }) => {
   const today = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
 
+  const handlePrint = () => {
+    const printArea = document.getElementById('report-print-area');
+    if (!printArea) return;
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (!win) { window.print(); return; }
+    win.document.write(`<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Reporte PERU INKA</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, -apple-system, sans-serif; background: white; color: #0f172a; padding: 0; }
+      @page { size: A4 portrait; margin: 12mm; }
+      table { width: 100%; border-collapse: collapse; font-size: 0.82rem; color: #0f172a; }
+      thead { display: table-header-group; }
+      tr { page-break-inside: avoid; page-break-after: auto; }
+    </style>
+  </head>
+  <body>${printArea.innerHTML}</body>
+</html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); win.close(); }, 400);
+  };
+
   const liquidados = students.filter(s => s.estado_financiero === 'LIQUIDADO').length;
   const enCuentas  = students.filter(s => s.estado_financiero === 'EN ACUENTAS').length;
   const sinAbonar  = students.filter(s => s.estado_financiero === 'DEUDA TOTAL').length;
@@ -51,7 +77,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ students, onClose }) =
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.2rem 0 0' }}>{today}</p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={() => window.print()} className="btn btn-primary" style={{ padding: '0.5rem 1.25rem' }}>
+            <button onClick={handlePrint} className="btn btn-primary" style={{ padding: '0.5rem 1.25rem' }}>
               🖨️ Imprimir / PDF
             </button>
             <button onClick={onClose} className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>✕</button>
@@ -97,7 +123,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ students, onClose }) =
             const sinPago   = lista.filter(s => s.estado_financiero === 'DEUDA TOTAL').length;
 
             return (
-              <div key={sede} style={{ marginBottom: '1.75rem', pageBreakInside: 'avoid' }}>
+              <div key={sede} style={{ marginBottom: '1.75rem', breakInside: 'auto', pageBreakInside: 'auto' }}>
                 {/* Cabecera de sede */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1e293b', color: 'white', borderRadius: '6px 6px 0 0', padding: '0.5rem 0.75rem' }}>
                   <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>📍 {sede}</span>
@@ -164,13 +190,6 @@ export const ReportModal: React.FC<ReportModalProps> = ({ students, onClose }) =
         </div>
       </div>
 
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          #report-print-area, #report-print-area * { visibility: visible; }
-          #report-print-area { position: fixed; top: 0; left: 0; width: 100%; padding: 1.5rem; background: white; }
-        }
-      `}</style>
     </div>
   );
 };
